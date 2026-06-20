@@ -8,7 +8,7 @@ The backtest completes, but the trade list is empty.
 
 ### Cause 1 - `entry_conditions` and `on_bar_strategy` together
 
-The most frequent case. When `entry_conditions` is present in the `DECLARATION` and `on_bar_strategy` is also defined, the engine prioritizes declarative mode and ignores the imperative one. If the conditions do not have valid `plots` or the series does not fire, the result is zero trades.
+The most frequent case. If both declarative `entry_conditions` and an imperative `on_bar_strategy` exist, the runtime ignores the declarative conditions by default. The imperative handler runs first; declarative `entry_conditions` are only evaluated as an opt-in fallback, and only when no imperative signals were emitted AND `params["runtime_declarative_fallback"] = True`. The usual cause of zero trades is intending one mode but emitting nothing in it: choose a single mode.
 
 ```python
 # Incorrect
@@ -17,7 +17,7 @@ DECLARATION = {
     ...
 }
 def on_bar_strategy(sdk, params):
-    sdk.buy(...)   # never runs
+    sdk.buy(...)   # runs (imperative path executes first; declarative is opt-in only)
 ```
 
 **Fix:** choose one mode and remove the other. Details in [when to use declarative mode](../declarative-mode/when-to-use.md).
@@ -79,7 +79,7 @@ The log shows several consecutive `buy_to_open` orders when one per signal is ex
 
 ### Cause - missing `if sdk.position == 0:` before entering
 
-On every bar in which the condition is true, the script attempts to open. The engine rejects silently (Max Positions = 1), but the log becomes polluted.
+On every bar in which the condition is true, the script attempts to open another position. By default the backtest runs with **Max Positions = 1** (ProfitChart behavior), so the extra `buy_to_open` orders are silently rejected — but they still pollute the log. If you raise Max Positions in the backtest settings, the entries actually accumulate (pyramiding). Either way, guard entries with `if sdk.position == 0:`.
 
 ```python
 # Incorrect
@@ -177,7 +177,7 @@ Code rejected by the engine before running.
 ### Cause 1 - Forbidden import
 
 ```python
-import os   # SecurityError: Import not allowed: os
+import os   # SecurityError: Forbidden pattern detected: os module import
 ```
 
 **Fix:** use only `numpy`, `pandas`, `math`, `json`, `datetime`, `pandas_ta`, `talib`. Details in [sandbox limits](../getting-started/sandbox-limits.md).
@@ -185,8 +185,8 @@ import os   # SecurityError: Import not allowed: os
 ### Cause 2 - Blocked builtin
 
 ```python
-open("file.txt", "w")     # SecurityError: open is blocked
-eval("1+1")               # SecurityError: eval is blocked
+open("file.txt", "w")     # SecurityError: Forbidden pattern detected: file open
+eval("1+1")               # SecurityError: Forbidden pattern detected: eval call
 ```
 
 **Fix:** there is no I/O or dynamic execution. Rewrite the strategy without these calls.
@@ -194,7 +194,7 @@ eval("1+1")               # SecurityError: eval is blocked
 ### Cause 3 - Dunder attribute
 
 ```python
-x.__internals__   # SecurityError: Forbidden attribute
+x.__internals__   # SecurityError: Dunder attribute forbidden: __internals__
 ```
 
 **Fix:** `__xxx__` attributes are not available. To check a type, use `isinstance()`.
@@ -229,7 +229,7 @@ sdk.state["all_closes"] = sdk.state.get("all_closes", []) + [c["close"] for c in
 buf = sdk.state.setdefault("closes", [])
 buf.append(sdk.candles[-1]["close"])
 if len(buf) > 500:
-    del buf[:len(buf) - 500]
+    buf[:] = buf[-500:]   # del is forbidden in the sandbox; use slice assignment
 ```
 
 ## "insufficient capital"

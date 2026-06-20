@@ -115,10 +115,10 @@ The `main()` function was not defined at the root level. Check that it is not in
 `sdk.buy()` was called without `action=`. All calls require that argument - the [canonical actions](../sdk-reference/actions.md) documentation lists the 7.
 
 ### "Import not allowed"
-Import outside the whitelist. See [sandbox limits](sandbox-limits.md). There are no imports in this script; if the error appears, remove any `import` that is not `numpy`/`pandas`/`math`/`json`/`datetime`.
+Import outside the whitelist. See [sandbox limits](sandbox-limits.md). There are no imports in this script; if the error appears, remove any `import` that is not in the whitelist (`numpy`, `pandas`, `pandas_ta`, `talib`, `math`, `json`, `datetime`, `tesstrade_indicators`).
 
 ### 0 trades
-The `DECLARATION` declares `entry_conditions` but the script also defines `on_bar_strategy`. These modes are **mutually exclusive** (details in [when to use declarative mode](../declarative-mode/when-to-use.md)). Remove `entry_conditions` from the DECLARATION.
+For an event-driven script like this one, no trades usually means the entry logic never triggered (e.g. `sdk.position` / price comparison conditions were never met) or there were fewer than 2 candles available. Check that `sdk.buy()` is actually reached. Note: declarative `entry_conditions` in the DECLARATION do **not** block `on_bar_strategy` from emitting trades - at runtime they are ignored (with a warning) unless you set `params['runtime_declarative_fallback'] = True` (details in [when to use declarative mode](../declarative-mode/when-to-use.md)).
 
 ### Empty parameter panel
 `DECLARATION["inputs"]` is empty or `main()` does not return `DECLARATION` in the no-argument branch. Review the contract in [main dispatcher](../contract/dispatcher-main.md).

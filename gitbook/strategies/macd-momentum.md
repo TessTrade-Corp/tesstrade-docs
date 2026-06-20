@@ -38,7 +38,8 @@ def on_bar_strategy(sdk, params):
     fast, slow, sig = int(params.get("fast", 12)), int(params.get("slow", 26)), int(params.get("signal", 9))
     if len(sdk.candles) < max(fast, slow) + sig + 2: return
 
-    hist_prev, hist_curr = _macd_hist_prev_curr([c["close"] for c in sdk.candles], fast, slow, sig)
+    _, _, hist = Indicator.macd([c["close"] for c in sdk.candles], fast, slow, sig)
+    hist_prev, hist_curr = hist[-2], hist[-1]
     crossed_up = hist_prev <= 0 and hist_curr > 0
     crossed_down = hist_prev >= 0 and hist_curr < 0
 

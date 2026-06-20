@@ -5,7 +5,7 @@ For lines, histograms, or areas to appear on the chart, two things are required:
 1. Declare the **visual shape** in `DECLARATION["plots"]` (name, type, color, pane).
 2. Return the **numeric values** in `series` from the `df=` branch of `main()`.
 
-The key in `series` must **match exactly** the `source` of the plot. Otherwise, the frontend draws nothing.
+The key in `series` must correspond to the `source` of the plot (they are matched after a case-insensitive normalization). Keep them identical to be safe; otherwise the frontend draws nothing.
 
 ## Minimum contract
 
@@ -208,7 +208,7 @@ def on_bar_strategy(sdk, params):
 
 ## Common errors
 
-* **Plot does not appear:** check `source` of the plot against the key in `series`. Both must be **exactly equal**, case-sensitive.
+* **Plot does not appear:** check `source` of the plot against the key in `series`. The two are matched after normalization (trimmed, lowercased, non-alphanumeric runs collapsed to `_`), so it is **not** case-sensitive — `source: "ma_fast"` matches a series key `ma_fast`, `MA Fast`, or `ma fast`. Keep them identical to avoid surprises.
 * **Legend chip shows but the line is invisible:** the indicator declares no `pane` (or `pane: "overlay"`) but its values live in a different scale than price (RSI 0–100, MACD around zero, Aroon -100..+100). On a high-priced asset, the line collapses against y=0. Add `"pane": "new"` and `"scale": "right"` to the DECLARATION.
 * **Width or color silently ignored:** use `"width": 2` (not `"lineWidth"`) and `"#RRGGBB"` (not `"#RRGGBBAA"`). 8-digit hex with alpha is rejected by the validator. Area transparency is applied automatically.
 * **Misaligned line:** the series array has a length different from `len(df)`. Use `None` for warmup instead of omitting.

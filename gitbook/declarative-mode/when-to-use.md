@@ -1,6 +1,6 @@
 # When to use entry/exit conditions
 
-TessTrade accepts **two mutually exclusive ways** of writing the logic of a strategy:
+TessTrade offers **two ways** of writing the logic of a strategy. They can technically coexist, but `on_bar_strategy` always runs and takes precedence -- `entry_conditions` only act as an opt-in declarative fallback. For clarity, pick one approach per script:
 
 1. **Imperative mode (`on_bar_strategy`)** -- you write Python code that decides when to buy/sell.
 2. **Declarative mode (`entry_conditions` / `exit_conditions`)** -- you describe the conditions in JSON and the engine executes them.
@@ -22,9 +22,9 @@ When in doubt: **imperative**. It is more expressive and covers everything the d
 
 ## The critical rule
 
-**The two modes cannot coexist.** If `DECLARATION` contains `entry_conditions`, the engine **ignores any `on_bar_strategy`** in the script. The strategy runs **entirely in declarative mode**.
+**`on_bar_strategy` is NOT ignored when `entry_conditions` are present.** On each closed candle the engine runs `on_bar_strategy` first (via `main(df=None, sdk=...)`) and uses its signals. The declarative `entry_conditions` / `exit_conditions` are only evaluated as a **fallback**, and only when (a) `on_bar_strategy` emitted no signals **and** (b) you opted in with `params['runtime_declarative_fallback'] = True`. By default the declarative runtime path is **disabled**, so `on_bar_strategy` is what actually executes -- the engine does not silently switch to "entirely declarative mode". Mixing both is still discouraged for clarity.
 
-The result is "0 trades" with no explicit error, because the engine is running in a different mode from what was intended.
+When both are present, `on_bar_strategy` runs and its signals are used. If `on_bar_strategy` emits nothing and you have not set `params['runtime_declarative_fallback'] = True`, the engine prints a warning to stdout and the `entry_conditions` are **not** evaluated, so you get "0 trades". The cause is the disabled-by-default declarative fallback, not a silent mode switch.
 
 ```python
 # Anti-pattern: has entry_conditions and on_bar_strategy
@@ -155,7 +155,7 @@ def main(df=None, sdk=None, params={}):
     return DECLARATION
 ```
 
-**Note:** there is no `on_bar_strategy`. All trading logic lives in `entry_conditions` and `exit_conditions`. The engine reads the series computed in `_build_chart` (inside the `df=` branch) and evaluates the conditions.
+**Note:** there is no `on_bar_strategy`. All trading logic lives in `entry_conditions` and `exit_conditions`. The engine reads the series computed in `_build_chart` (inside the `df=` branch) to render the plots. **For the conditions to actually fire at runtime you MUST opt in** by setting `params['runtime_declarative_fallback'] = True` (for example via an input default). Without it the engine logs a warning and evaluates no conditions, so the strategy produces 0 trades.
 
 ### How the engine evaluates
 

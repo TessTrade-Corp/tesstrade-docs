@@ -40,8 +40,10 @@ def on_bar_strategy(sdk, params):
     if len(sdk.candles) < period + 2:
         return
 
-    rsi = _rsi_last([c["close"] for c in sdk.candles], period)
-    if rsi is None: return
+    rsi_series = Indicator.rsi([c["close"] for c in sdk.candles], period)
+    rsi = rsi_series[-1]
+    if rsi is None:
+        return
 
     if sdk.position == 0:
         if rsi < oversold:

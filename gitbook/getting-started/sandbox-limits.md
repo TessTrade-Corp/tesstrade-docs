@@ -202,7 +202,7 @@ Cap the size:
 buf = sdk.state.setdefault("buffer", [])
 buf.append(sdk.candles[-1]["close"])
 if len(buf) > 1000:
-    del buf[:len(buf) - 1000]  # keep only the last 1000
+    sdk.state["buffer"] = buf[-1000:]  # keep only the last 1000 (del is forbidden)
 ```
 
 ## Other important restrictions

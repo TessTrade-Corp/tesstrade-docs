@@ -12,10 +12,10 @@ In the Chart Trading panel, click **Editor** (icon `{}`). A side tab opens with:
 
 ## Initial scaffold
 
-When opening a new script, the editor pre-populates a minimal template, typically the SMA Crossover. The options are:
-- Edit the template directly.
-- Clear everything and paste custom code.
+When opening a new script, the editor starts with an empty code area (and a default single-line SMA indicator declaration). To begin from a working strategy, you can:
 - Import one of the [ready templates](../strategies/sma-crossover.md).
+- Use the Call Simon tab to generate code.
+- Paste your own custom code.
 
 ## Typical work cycle
 
@@ -39,7 +39,6 @@ flowchart TD
 | `Ctrl + S` | Save script |
 | `Ctrl + Enter` | Run |
 | `Ctrl + Space` | Autocomplete (if the editor supports it) |
-| `F1` | Open docs |
 
 ## Real-time output
 

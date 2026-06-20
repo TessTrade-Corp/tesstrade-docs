@@ -174,7 +174,7 @@ def macd_series(closes, fast=12, slow=26, signal=9):
 
 ```python
 def macd_hist_cross_up(closes, fast=12, slow=26, signal=9):
-    _, _, hist = macd_series(closes, fast, signal, signal)
+    _, _, hist = macd_series(closes, fast, slow, signal)
     if len(hist) < 2:
         return False
     return hist[-2] <= 0 and hist[-1] > 0

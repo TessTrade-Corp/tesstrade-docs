@@ -14,7 +14,8 @@ Change in capital over the period. Baseline for all other metrics.
 
 ### 2. Sharpe ratio (annualized)
 ```
-(mean_return - risk_free) / volatility_of_returns * sqrt(252)
+(mean_excess_return / volatility_of_returns) * sqrt(periods_per_year)
+periods_per_year = number_of_returns / period_in_years   # falls back to 252 only if period length is unknown
 ```
 Risk-adjusted return. The most widely used metric in quant.
 

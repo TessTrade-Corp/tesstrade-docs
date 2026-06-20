@@ -21,8 +21,10 @@ The runtime normalizes some aliases; prefer the canonical form for consistency:
 | Alias | Canonical |
 |---|---|
 | `sell_short` | `sell_short_to_open` |
+| `sell_to_close_long` | `sell_to_close` |
+| `buy_to_cover_short` | `buy_to_cover` |
 
-Other variations (CamelCase, spaces, uppercase) **do not work**. The action is always `snake_case` and lowercase.
+Spaces and CamelCase variations **do not work** (e.g. `buy to open` or `buyToOpen` are rejected). Case is normalized — the engine lowercases the action before matching — but using canonical lowercase `snake_case` is strongly recommended for clarity.
 
 ## Call signature
 

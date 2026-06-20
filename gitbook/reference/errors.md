@@ -122,7 +122,7 @@ sdk.state["all_closes"] = sdk.state.get("all_closes", []) + [...]
 buf = sdk.state.setdefault("closes", [])
 buf.append(new_value)
 if len(buf) > 500:
-    del buf[:len(buf) - 500]
+    buf[:] = buf[-500:]
 ```
 
 ## `ProtocolError`

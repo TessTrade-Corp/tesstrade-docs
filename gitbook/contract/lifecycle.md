@@ -42,7 +42,7 @@ def on_bar_strategy(sdk, params):
     GLOBAL_CACHE[sdk.candles[-1]["time"]] = sdk.candles[-1]["close"]
 ```
 
-This provides persistence at no extra cost, but it is considered an anti-pattern: prefer `sdk.state`, which is persisted to the database across backend restarts. Module-level globals are lost if the process restarts.
+This provides persistence at no extra cost, but it is considered an anti-pattern: prefer `sdk.state`, which persists across every bar/frame within the same running session. Both `sdk.state` and module-level globals are lost if the process/backend restarts.
 
 ## Phase 3 - Entrypoint discovery
 
@@ -124,7 +124,7 @@ Chart trading is a long-running process. If the backend restarts (deploy, crash)
 * **`sdk.state`** is reinitialized. Volatile script state (flags, cooldowns, trailing high-water) may reset.
 * **Module-level globals** (`PARAMS`, `GLOBAL_CACHE`) also reset.
 
-**Mitigation:** if the script needs state that must survive a restart, save it to `sdk.state` at the start of every call. The engine persists `sdk.state` to the database when it is safe to do so.
+**Mitigation:** `sdk.state` only survives while the session/process is alive, so it cannot be relied upon across a restart. State that must survive a restart should be rederived on reload from durable sources such as `sdk.candles` or the persisted orders/positions, or recomputed from scratch.
 
 For most scripts, restarts are rare and do not affect the strategy. The concern is only relevant for critical logic that depends on state accumulated over many bars (for example, a custom manual EMA fed bar by bar).
 

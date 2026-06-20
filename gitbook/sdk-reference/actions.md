@@ -1,6 +1,6 @@
 # Canonical actions
 
-Every order issued by the script uses `sdk.buy(...)`, `sdk.sell(...)` or `sdk.close(...)` with an **explicit action** via the `action` kwarg. The engine accepts 7 canonical actions; there are no hidden aliases.
+Every order issued by the script uses `sdk.buy(...)`, `sdk.sell(...)` or `sdk.close(...)` with an **explicit action** via the `action` kwarg. The engine accepts 7 canonical actions, plus a few legacy aliases (e.g. `sell_short`, `sell_to_close_long`, `buy_to_cover_short`) kept for backward compatibility. Prefer the canonical forms in new scripts.
 
 | Action | Effect | When to use |
 |---|---|---|
@@ -17,7 +17,7 @@ Every order issued by the script uses `sdk.buy(...)`, `sdk.sell(...)` or `sdk.cl
 `action` is required. `sdk.buy(qty=1)` without `action` raises `ProtocolError` and terminates the strategy:
 
 ```
-ProtocolError: Strict Mode: buy() / sell() requires explicit action
+ProtocolError: Strict Mode: buy() / sell() exige action explícita
 ```
 
 No exceptions. Every call requires the `action` kwarg.
@@ -39,7 +39,7 @@ sdk.buy(
     trailing_stop_pct=None,      # trailing as a percentage (0.02 = 2%)
     time=None,                   # timestamp (ms). Default: last candle
     tif="day",                   # "day" (default) | "gtc" | "this_bar"
-    size_pct=None,               # % of cash - alternative to qty
+    size_pct=None,               # fraction of cash in (0.0, 1.0] - e.g. 0.5 = 50%; alternative to qty
     oco_group=None,              # OCO group (one-cancels-other)
     instrument_id=None,          # instrument override (rare)
 )
@@ -200,7 +200,7 @@ sdk.update_exits(stop_loss=new_stop)
 sdk.set_trailing_stop(new_stop)  # simple wrapper over update_exits
 ```
 
-Leaving `stop_loss=None` **does not clear the stop**; it only omits the update. To zero it, pass `0` explicitly (the engine ignores stops <= 0).
+Leaving `stop_loss=None` (or passing a value <= 0) does **not** clear or update the stop - the previous stop stays in place. There is no way to remove an attached stop via `update_position_exits`; only to overwrite it with a new positive price.
 
 ---
 

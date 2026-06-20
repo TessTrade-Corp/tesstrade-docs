@@ -8,7 +8,7 @@ The `order_type` kwarg of `sdk.buy/sell/close` controls **how** the order execut
 | `"limit"` | At the specified price or better | `price` (required) |
 | `"stop"` | When the price hits the trigger, becomes market | `price` (trigger) |
 
-Any other value falls back to `"market"`. A protective stop and target are **not** a separate order type — pass `stop_loss` / `take_profit` on a `market`, `limit`, or `stop` order (see [Attached stop and target](#attached-stop-and-target)).
+Any other value is rejected - the engine raises an error (`Invalid order_type ...`) and the order is not placed. The aliases `stop_market` and `stop-market` are also accepted for `stop`. A protective stop and target are **not** a separate order type — pass `stop_loss` / `take_profit` on a `market`, `limit`, or `stop` order (see [Attached stop and target](#attached-stop-and-target)).
 
 ## `market`
 
@@ -96,7 +96,7 @@ Regardless of `order_type`, `tif` controls **how long** the order stays alive wh
 | `"gtc"` | Good-til-cancelled - lives until explicit cancellation |
 | `"this_bar"` | Valid only for the current bar; cancelled if it does not execute by the next candle |
 
-Any other value falls back to `"day"`.
+Any other value is rejected with an error (`Invalid tif ...`). `"ioc"` and `"fok"` are also accepted.
 
 ```python
 sdk.buy(

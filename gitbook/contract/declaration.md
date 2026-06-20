@@ -39,10 +39,10 @@ def main(df=None, sdk=None, params={}):
 | `scale` | No | `"left"` \| `"right"` \| `"none"` | Which side the Y axis is drawn on. Default: `"none"`. |
 | `levels` | No | `list[dict]` | Fixed horizontal lines (for example, 70/30 on RSI). |
 | `alerts` | No | `list[dict]` | User-configurable alerts. |
-| `entry_conditions` | No | `list[dict]` | Entry conditions for declarative mode (mutually exclusive with `on_bar_strategy`). |
+| `entry_conditions` | No | `list[dict]` | Entry conditions for declarative mode (opt-in runtime fallback — see [Exclusivity rule](#exclusivity-rule) below). |
 | `exit_conditions` | No | `list[dict]` | Exit conditions for declarative mode. |
 
-Accepted aliases: `entryConditions` / `entry_conditions`, `exitConditions` / `exit_conditions`, `studyType` / `study_type` / `type`.
+Accepted aliases: `entryConditions` / `entry_conditions`, `exitConditions` / `exit_conditions`, `study_type` / `type`.
 
 ---
 
@@ -97,7 +97,7 @@ Each plot has a data series (in `series`, returned by the `df=` branch) and visu
     "name": "ma_fast",          # REQUIRED - key in series
     "title": "SMA 9",           # optional - legend
     "source": "ma_fast",        # REQUIRED - key in series (usually equal to name)
-    "type": "line",             # REQUIRED - "line" | "histogram" | "dots" | "area" | "arrows" | "circles"
+    "type": "line",             # optional (defaults to "line") - "line" | "area" | "histogram" | "columns" | "dots" | "arrows" | "circles" | "cross" | "stepline" | "priceprofile"
     "color": "#22D3EE",         # 6-digit hex only (#RRGGBB), no alpha
     "width": 2,                 # pixels (use "width", not "lineWidth")
     "style": "solid",           # "solid" | "dashed" | "dotted"
@@ -225,7 +225,7 @@ The same 7 canonical actions described in [Canonical actions](../sdk-reference/a
 
 ### Exclusivity rule
 
-**`entry_conditions` and `on_bar_strategy` are mutually exclusive.** When the engine finds `entry_conditions` in the DECLARATION, it activates declarative mode and ignores any `on_bar_strategy` function or `sdk` branch in `main()`. To use manual logic, do not declare `entry_conditions`.
+Declarative `entry_conditions` / `exit_conditions` are **opt-in**. By default the engine runs your `on_bar_strategy` / `main(sdk=...)` logic per closed bar and **ignores** the declarative conditions (it prints a warning). To have the engine evaluate the declarative conditions, set `params["runtime_declarative_fallback"] = True`. So `on_bar_strategy` and declarative conditions are **not** mutually exclusive — when the fallback is off (the default), the manual code wins.
 
 ---
 

@@ -47,7 +47,7 @@ sdk.update_exits(stop_loss=new_stop)
 sdk.set_trailing_stop(new_stop)  # same effect; clearer name
 ```
 
-**Passing `None` does not clear the stop**, it only omits the update of that field. To remove the stop, pass `0` and the engine will ignore it (stops <= 0 are not considered).
+**Passing `None` (or `0`) for a field does not clear an existing stop**, it simply omits that field from the update. Values <= 0 are filtered out (treated the same as `None`), and the Rust executor rejects a stop_loss <= 0 as an error. There is no built-in way to remove an already-attached stop via `update_exits`; close the position or manage the stop in your script instead.
 
 ## Trailing stop - manual implementation
 

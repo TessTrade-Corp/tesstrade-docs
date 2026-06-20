@@ -109,7 +109,7 @@ Common methods on every streaming class:
 | `value()` | `Optional[float]` (or tuple for `Macd`) | Latest output, `None` during warm-up |
 | `is_ready()` | `bool` | True once the warm-up window is filled |
 | `reset()` | `None` | Drop all state and start over |
-| `period()` | `int` | Configured period |
+| `period()` | `int` | Configured period (all classes except `Macd`, which uses `fast`/`slow`/`signal` instead of a single period) |
 
 `Macd.value()` returns a 3-tuple `(macd, signal, histogram)` once warm.
 

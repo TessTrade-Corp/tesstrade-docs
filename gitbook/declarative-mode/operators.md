@@ -96,7 +96,7 @@ Declarative mode has no "AND". To express "close short when RSI < 30", simply de
 ],
 ```
 
-Fires on every bar where `rsi[-1] < 30` and `sdk.position < 0`. The engine already filters by the current position: a `buy_to_cover` exit_condition only runs if `sdk.position < 0`.
+Fires on every bar where `rsi[-1] < 30`, but only while you hold a position: the engine scans `exit_conditions` whenever `sdk.position != 0` and `entry_conditions` only when flat. Note it does **not** check whether a condition's action matches the side of the open position -- every condition in the selected list is evaluated, so a `buy_to_cover` condition in `exit_conditions` will also fire while long. Coherence between action and position is left to you (and the order layer).
 
 ## Actions accepted in conditions
 

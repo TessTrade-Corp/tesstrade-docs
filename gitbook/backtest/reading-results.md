@@ -61,8 +61,9 @@ Capture of the script's `stdout`. Useful for debugging:
 
 ```python
 def on_bar_strategy(sdk, params):
-    rsi = _rsi_last([c["close"] for c in sdk.candles], 14)
-    print(f"[{sdk.candles[-1]['time']}] RSI={rsi:.2f} pos={sdk.position}")
+    rsi = Indicator.rsi(sdk.candles, 14)[-1]
+    if rsi is not None:
+        print(f"[{sdk.candles[-1]['time']}] RSI={rsi:.2f} pos={sdk.position}")
 ```
 
 Each `print()` generates a line in the log with a timestamp. Uncaught exceptions also appear here, with traceback.

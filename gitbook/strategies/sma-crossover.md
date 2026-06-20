@@ -66,8 +66,8 @@ def _build_chart(df, params):
     return {
         **DECLARATION,
         "series": {
-            "ma_fast": _sma_series(closes, fast),
-            "ma_slow": _sma_series(closes, slow),
+            "ma_fast": Indicator.sma(closes, fast),
+            "ma_slow": Indicator.sma(closes, slow),
         },
     }
 

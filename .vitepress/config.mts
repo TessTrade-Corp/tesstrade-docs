@@ -62,7 +62,8 @@ export default withMermaid(
             { text: 'Plots and series', link: '/indicators/plots-and-series' },
             { text: 'Implementing SMA and EMA', link: '/indicators/implementing-sma-ema' },
             { text: 'RSI, MACD and Bollinger Bands', link: '/indicators/rsi-macd-bands' },
-            { text: 'Panes: overlay vs new pane', link: '/indicators/panes' }
+            { text: 'Panes: overlay vs new pane', link: '/indicators/panes' },
+            { text: 'tesstrade_indicators (native library)', link: '/indicators/tesstrade-indicators' }
           ]
         },
         {

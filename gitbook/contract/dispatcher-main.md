@@ -30,7 +30,7 @@ main(sdk=strategy_sdk_instance, params={"fast_period": 9, "slow_period": 21})
 
 **What the script does:** reads `sdk.candles`, computes indicators, decides whether to open or close a position, and calls `sdk.buy(...)` / `sdk.sell(...)`.
 
-**What the script returns:** nothing (implicit `None`) or any value. The engine ignores the return value. The side effect is the orders emitted through the SDK.
+**What the script returns:** typically nothing (implicit `None`) — orders are emitted as a side effect through the SDK (`sdk.buy(...)` / `sdk.sell(...)`). The engine does, however, also inspect the return value: if you return a list of signal dicts, or a dict with a `"signals"` list, those entries are merged into the emitted signals.
 
 ```python
 def on_bar_strategy(sdk, params):
