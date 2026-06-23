@@ -8,16 +8,6 @@ Write indicators and strategies in **Python**. The same script runs in two conte
 **New here?** Start with [Backtest vs Chart Trading](getting-started/overview.md) for the mental model, then jump to the [Example script](getting-started/example-script.md) to write your first strategy in five minutes.
 :::
 
-<div class="home-download">
-  <a class="home-download__btn" href="/tesstrade-docs-completo.md" download="tesstrade-docs.md">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    Download all docs as a single <code>.md</code>
-  </a>
-  <span class="home-download__hint">One file with the entire documentation — paste it into ChatGPT, Claude or any AI assistant as context.</span>
-</div>
-
-
-
 ## What you write
 
 A Python file with a `main(df, sdk, params)` function and, optionally, a `DECLARATION` dictionary describing the editable parameters and the chart plots.
