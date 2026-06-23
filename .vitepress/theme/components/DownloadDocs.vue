@@ -35,36 +35,77 @@ const HREF = '/tesstrade-docs-completo.md'
 </template>
 
 <style scoped>
+/*
+ * Lives in VitePress's `nav-bar-content-after` slot, which renders flush
+ * against the appearance toggle. `margin-left` gives the two controls room to
+ * breathe so the button reads as a distinct, deliberate CTA — not glued to the
+ * toggle in the top-right corner.
+ */
 .download-docs {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
+  gap: 7px;
+  height: 34px;
+  margin-left: 14px;
+  padding: 0 15px 0 13px;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
+  border-radius: 17px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   line-height: 1;
   color: var(--vp-c-text-2);
   background-color: var(--vp-c-bg-soft);
   white-space: nowrap;
-  transition: color 0.25s, border-color 0.25s, background-color 0.25s;
+  /* Soft drop shadow for lift + a faint top highlight for a glassy sheen. */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
 }
 
 .download-docs:hover {
   color: var(--vp-c-brand-1);
   border-color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-brand-soft);
+  /* Brand-tinted glow that adapts to light/dark via the live brand color. */
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--vp-c-brand-1) 55%, transparent);
+  transform: translateY(-1px);
+}
+
+.download-docs:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.download-docs:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
 }
 
 .download-docs__icon {
   flex-shrink: 0;
+  transition: transform 0.25s ease;
 }
 
-/* Collapse to an icon-only button on narrow screens to save navbar space. */
+/* Nudge the arrow down on hover to telegraph "download". */
+.download-docs:hover .download-docs__icon {
+  transform: translateY(1.5px);
+}
+
+/* Collapse to a circular icon-only button on narrow screens to save space. */
 @media (max-width: 768px) {
   .download-docs {
-    padding: 0 8px;
+    width: 34px;
+    margin-left: 8px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
   }
   .download-docs__label {
     display: none;
