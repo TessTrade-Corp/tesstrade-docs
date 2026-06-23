@@ -1,21 +1,45 @@
 # Implementing SMA and EMA
 
-Moving averages are the foundation of a large portion of strategies. A safe, optimized version of `pandas_ta` is available in the sandbox, but implementing them manually grants full control and predictability.
+Moving averages are the foundation of a large portion of strategies. There
+are two ways to get them, and they answer two different questions:
 
-This page covers implementations of SMA (Simple Moving Average), EMA (Exponential Moving Average), and variations.
+1. **"I just want the value the chart shows."** Import
+   [`tesstrade_indicators`](tesstrade-indicators.md) and call `ti.sma`,
+   `ti.ema` or `ti.wma`. These are the **parity-true, chart-identical**
+   path: they call the same `tesstrade_core` kernels the live chart renders
+   with, so what you compute equals what the chart draws — no drift, no
+   "right in backtest, wrong on the chart". And for per-bar strategies the
+   `ti.Sma` / `ti.Ema` / `ti.Wma` streaming classes keep state, so each
+   update is **O(1)** instead of recomputing the whole series.
+2. **"I need to read, modify, or extend the math"** — or I need a moving
+   average that *isn't* in the catalogue (HMA below, and everything in
+   [RSI, MACD and Bollinger Bands](rsi-macd-bands.md)). Then the
+   hand-rolled reference implementations on this page are exactly what you
+   want. They are exact, sandbox-safe, and meant to be read and changed.
 
-> **Faster alternative:** if the strategy reads SMA/EMA on every bar
-> and you don't need to inspect the math, the
-> [`tesstrade_indicators`](tesstrade-indicators.md) library exposes
-> `Sma`/`Ema` streaming classes that keep state across bars — O(1)
-> per update instead of O(n). Same Wilder/standard formulas as
-> `pandas_ta`, callable as `import tesstrade_indicators as ti; ti.Ema(20)`.
-> The implementations below remain the right reference when you need
-> to read or modify the math.
+> **Parity-true alternative.** If you only need the moving-average value,
+> reach for [`tesstrade_indicators`](tesstrade-indicators.md) first:
+> `import tesstrade_indicators as ti; ti.ema(closes, 20)` returns the same
+> series the chart draws (and `ti.Ema(20).update(price)` is O(1) per bar).
+> `ti.ema` matches `pandas_ta.ema` to floating-point precision — that is,
+> the **strict, SMA-seeded** EMA described below, *not* the relaxed
+> first-value seed. The hand-rolled versions on this page remain the right
+> reference whenever you need to inspect or modify the math, or for moving
+> averages outside the six-function catalogue.
+
+For the canonical file layout — **colors → params → declaration → math →
+dispatcher**, with `type:"color"` inputs correctly wired into plot colors —
+see [Anatomy of a custom indicator](anatomy.md). Everything below is the
+math you drop into that structure.
 
 ## SMA -- Simple moving average
 
 The arithmetic mean of the last `period` closes.
+
+> Want the chart's SMA in one line? `ti.sma(closes, period)` returns a
+> list the same length as `closes`, `None` during warm-up — identical to
+> the line the chart renders. The reference below is for when you want to
+> own or tweak the math.
 
 ### "Full series" version (for plots)
 
@@ -46,7 +70,7 @@ def sma_last(values, period):
     return sum(values[-period:]) / period
 ```
 
-Performance is irrelevant here: typical `period` is less than 100 and `sum()` is trivial.
+Performance is irrelevant here: typical `period` is less than 100 and `sum()` is trivial. (For a hot per-bar loop, `ti.Sma(period)` keeps a running window in O(1) and gives the chart-identical value.)
 
 ### Usage
 
@@ -71,6 +95,12 @@ ema[i] = alpha * values[i] + (1 - alpha) * ema[i-1]
 ema[0] = values[0]   # seed: first value becomes the initial point
 ```
 
+> The chart's EMA is `ti.ema(closes, period)`, which matches
+> `pandas_ta.ema` — i.e. the **strict, SMA-seeded** variant
+> (`ema_series_strict` below). The relaxed first-value seed
+> (`ema_series`) is a fine, simpler approximation for learning and quick
+> backtests, but it is **not** what the chart draws.
+
 ### "Full series" version
 
 ```python
@@ -85,9 +115,9 @@ def ema_series(values, period):
     return out
 ```
 
-**Note on warmup:** unlike SMA, EMA does not return `None`. It uses the first value itself as the seed. The first `period` points are less precise because the exponential weighting is still settling, but they are valid values.
+**Note on warmup:** unlike SMA, this relaxed EMA does not return `None`. It uses the first value itself as the seed. The first `period` points are less precise because the exponential weighting is still settling, but they are valid values.
 
-If you want to enforce strict warmup, return `None` for the first `period` points and start the seed as the SMA of `period`:
+If you want to match the chart, enforce strict warmup: return `None` for the first `period - 1` points and seed from the SMA of the first `period` values:
 
 ```python
 def ema_series_strict(values, period):
@@ -102,7 +132,7 @@ def ema_series_strict(values, period):
     return out
 ```
 
-For backtests of simple scripts, the relaxed version works. To match `pandas_ta.ema` exactly, use the strict version (which is what `pandas_ta` does).
+This strict, SMA-seeded version is what `pandas_ta.ema` does — and therefore what `ti.ema` and the chart do. If you just want that value, call `ti.ema(values, period)` and skip the hand-roll; reach for `ema_series_strict` when you want to read or modify the warm-up/seed behaviour. The relaxed `ema_series` above is a learning-friendly approximation, not chart parity.
 
 ### Incremental "last point" version
 
@@ -132,6 +162,13 @@ def on_bar_strategy(sdk, params):
 
 **Gain:** O(1) per candle instead of O(n). For 5m strategies running over months, this makes a difference.
 
+> If you want this O(1) win *and* exact chart parity, use the streaming
+> class instead of hand-managing state: build `ti.Ema(period)` once at
+> module scope, call `.update(last_close)` each bar, and read `.value()`
+> (`None` until `.is_ready()`). The streaming class is **bit-for-bit
+> identical** to the vectorised `ti.ema`, and both run the kernel the chart
+> uses. See [`tesstrade_indicators`](tesstrade-indicators.md).
+
 ## WMA -- Weighted moving average
 
 Linearly decreasing weight: the most recent point weighs the most.
@@ -146,9 +183,14 @@ def wma_last(values, period):
     return total / sum(weights)
 ```
 
+For the chart-identical full series there is `ti.wma(values, period)` (and `ti.Wma(period)` for O(1) per-bar). The reference above is for reading or extending the weighting.
+
 ## HMA -- Hull Moving Average
 
-Smoother than EMA, less laggy than SMA:
+Smoother than EMA, less laggy than SMA. **HMA is not in the
+`tesstrade_indicators` catalogue**, so this hand-rolled version (built from
+the WMA above) is exactly the kind of thing this page exists for — own the
+math, or reach for `pandas_ta`:
 
 ```python
 def hma_series(values, period):
@@ -185,7 +227,7 @@ def hma_series(values, period):
     return out
 ```
 
-HMA is more complex to implement, but it is suitable for scripts that need a smooth average. For the "something better than SMA" case, EMA is usually enough.
+HMA is more complex to implement, but it is suitable for scripts that need a smooth average. For the "something better than SMA" case, EMA is usually enough — and for plain EMA you can use `ti.ema` for chart parity.
 
 ## With `numpy`
 
@@ -211,7 +253,7 @@ def ema_series_np(values, period):
     return out.tolist()
 ```
 
-**Caveat:** even with numpy, the loop is still necessary for EMA. For real vectorization, `scipy.signal.lfilter` would be required, which is **not available** in the sandbox. If performance is critical, cache in `sdk.state` as shown above.
+**Caveat:** even with numpy, the loop is still necessary for EMA, and this uses the *relaxed* first-value seed (not chart parity). `scipy` is **not available** in the sandbox. If you want the chart-true value, use `ti.ema`; if performance in a per-bar loop is critical, use `ti.Ema(period)` or cache in `sdk.state` as shown above.
 
 ## Using `pandas_ta`
 
@@ -225,19 +267,25 @@ if sma is not None and not pd.isna(sma.iloc[-1]):
     last_sma = float(sma.iloc[-1])
 ```
 
-In general, **prefer a manual implementation** for predictability.
+`pandas_ta` is the right tool for any indicator **outside** the six-function `ti` catalogue (its `ti` counterparts — `ti.sma`/`ti.ema`/`ti.wma` — already match `pandas_ta` to floating-point precision under the project's golden-vector tests, so for those, prefer `ti` to get the exact chart series for free).
 
 ## Summary table
 
-| Indicator | Lag | Smoothing | Incremental complexity |
-|---|---|---|---|
-| SMA | High | Low | O(1) with running sum |
-| EMA | Medium | High | O(1) native |
-| WMA | Low | Medium | O(period) |
-| HMA | Very low | Very high | O(period) |
+| Indicator | Lag | Smoothing | Incremental complexity | Chart-true `ti` call |
+|---|---|---|---|---|
+| SMA | High | Low | O(1) with running sum | `ti.sma` / `ti.Sma` |
+| EMA | Medium | High | O(1) native | `ti.ema` / `ti.Ema` |
+| WMA | Low | Medium | O(period) | `ti.wma` / `ti.Wma` |
+| HMA | Very low | Very high | O(period) | — (hand-roll or `pandas_ta`) |
 
 ## Next steps
 
+* [Anatomy of a custom indicator](anatomy.md) -- the canonical file
+  structure (colors → params → declaration → math → dispatcher) every
+  example should mirror.
+* [`tesstrade_indicators`](tesstrade-indicators.md) -- the parity-true math
+  brain: the six vectorised functions, the six O(1) streaming classes, and
+  exactly how they match the chart.
 * [RSI, MACD and Bollinger Bands](rsi-macd-bands.md) -- composite indicators built on top of EMAs.
 * [SMA Crossover](../strategies/sma-crossover.md) -- full template using SMA.
 * [MACD Momentum](../strategies/macd-momentum.md) -- template using EMA and signal line.

@@ -2,13 +2,26 @@
 
 **Pure Python** implementations of three indicators common in quant strategies, with no dependency on `pandas_ta`.
 
-> **Faster alternatives:** for RSI and MACD, the
-> [`tesstrade_indicators`](tesstrade-indicators.md) library exposes
-> matching `Rsi`/`Macd` streaming classes (O(1) per bar, byte-for-byte
-> equivalent to the Wilder reference within float epsilon). Bollinger
-> Bands isn't in the catalogue yet — keep using the implementation
-> below for that one. The pure-Python references below are still
-> valuable when you need to read the math or extend it.
+> **One math brain — and where it stops.** RSI and MACD are *in* the
+> unified catalogue: `ti.rsi(closes, period)` and
+> `ti.macd(closes, fast, slow, signal)` from
+> [`tesstrade_indicators`](tesstrade-indicators.md) are the **parity-true**
+> path — they call the **same `tesstrade_core` kernels the live chart
+> renders with**, so what you compute equals what the chart draws (Wilder
+> RSI; `pandas_ta`-style MACD). For per-bar strategies the matching
+> streaming classes `ti.Rsi` / `ti.Macd` are *bit-for-bit identical* to
+> those vectorised functions at `O(1)` per bar. ATR is also in the
+> catalogue as `ti.atr(high, low, close, period)`.
+>
+> **Bollinger Bands is *not* in the 6-function catalogue**, so keep the
+> reference implementation below for it. (ATR *as a full series* also has
+> no vectorised list helper beyond `ti.atr`; the hand-rolled `atr_last`
+> below stays useful for a single trailing value and for reading the math.)
+> The pure-Python references on this page remain valuable for two reasons:
+> to **read and extend** the math, and to cover indicators outside the
+> catalogue. New to the file layout? Start with
+> [Anatomy of a custom indicator](anatomy.md) — colors and params first,
+> then the math.
 
 ## RSI -- Relative Strength Index
 
@@ -30,6 +43,23 @@ For i > period (Wilder smoothing):
 rs = avg_gain / avg_loss
 rsi = 100 - 100 / (1 + rs)
 ```
+
+### The parity-true path (chart math)
+
+If you just want RSI that matches the chart, reach for
+[`tesstrade_indicators`](tesstrade-indicators.md) — it runs the same Wilder
+kernel the chart renders with, so there is no drift between your series and
+the drawn line:
+
+```python
+import tesstrade_indicators as ti
+
+closes = df["close"].tolist()
+rsi = ti.rsi(closes, 14)   # list, len(df), None during warm-up; latest = rsi[-1]
+```
+
+The reference implementations below reproduce that same Wilder math in pure
+Python — keep them when you want to read, tweak, or fork the formula.
 
 ### Implementation -- series
 
@@ -96,7 +126,7 @@ def rsi_last_approx(closes, period=14):
     return 100.0 - 100.0 / (1.0 + rs)
 ```
 
-**Practical difference:** Wilder is more precise for canonical RSI; the simplified version is off by ~1-3 points in most cases. To match TradingView, use `rsi_series` and take `[-1]`.
+**Practical difference:** Wilder is more precise for canonical RSI; the simplified version is off by ~1-3 points in most cases. To match the chart (and TradingView), use `rsi_series` and take `[-1]` — or, for the same Wilder kernel the chart renders with, call `ti.rsi(closes, 14)[-1]`.
 
 ### Incremental RSI with `sdk.state`
 
@@ -134,6 +164,11 @@ def rsi_incremental(sdk, period=14):
     return 100.0 - 100.0 / (1.0 + rs)
 ```
 
+> The hand-rolled incremental above is fine, but for a strategy you can
+> skip the bookkeeping: build `ti.Rsi(14)` once at module scope and call
+> `.update(close)` per bar — it is the same kernel, `O(1)`, and bit-for-bit
+> identical to `ti.rsi`. See [`tesstrade_indicators`](tesstrade-indicators.md).
+
 ## MACD -- Moving Average Convergence Divergence
 
 Three lines: MACD line, Signal line, and histogram.
@@ -145,6 +180,22 @@ MACD line   = EMA(close, fast) - EMA(close, slow)     # typical: fast=12, slow=2
 Signal line = EMA(MACD line, signal)                   # typical: signal=9
 Histogram   = MACD line - Signal line
 ```
+
+### The parity-true path (chart math)
+
+`ti.macd` returns the three lines from the same kernel the chart draws
+(`pandas_ta`-style MACD), so the histogram you cross on equals the
+histogram on screen:
+
+```python
+import tesstrade_indicators as ti
+
+closes = df["close"].tolist()
+macd, signal, hist = ti.macd(closes, fast=12, slow=26, signal=9)  # three lists, len(df)
+```
+
+The pure-Python reference below reproduces the same formula when you want
+to read or extend it.
 
 ### Implementation
 
@@ -212,9 +263,20 @@ def macd_incremental(sdk, fast=12, slow=26, signal=9):
     return macd_value, sdk.state["signal"], hist
 ```
 
+> Same shortcut as RSI: `ti.Macd(12, 26, 9)` built once at module scope and
+> `.update(close)` per bar gives you `(macd, signal, hist)` from
+> `.value()`, bit-for-bit identical to `ti.macd` — no manual EMA caching.
+
 ## Bollinger Bands
 
 Moving average plus or minus N standard deviations. Measures volatility.
+
+> **Not in the catalogue.** Bollinger Bands is *not* one of the six
+> exposed `tesstrade_indicators` functions, so there is no `ti.bbands`.
+> Use the reference implementation below (or `pandas_ta.bbands`). You can
+> still source the **middle band** from the parity-true brain with
+> `ti.sma(closes, period)` and add the standard-deviation envelope around
+> it yourself.
 
 ### Formula
 
@@ -288,6 +350,23 @@ A **volatility** indicator, useful for dynamic stops. True Range = maximum of:
 * `|high - previous_close|`
 * `|low - previous_close|`
 
+> **Parity-true path.** ATR *is* in the catalogue:
+> `ti.atr(high, low, close, period)` (three parallel lists) returns the
+> full ATR series from the same kernel the chart renders with — use it when
+> you want a chart-matching ATR series. The hand-rolled `atr_last` below is
+> still handy for a single trailing value and for reading/extending the
+> math.
+
+```python
+import tesstrade_indicators as ti
+
+highs = df["high"].tolist()
+lows = df["low"].tolist()
+closes = df["close"].tolist()
+atr = ti.atr(highs, lows, closes, 14)   # list, len(df), None during warm-up
+latest_atr = atr[-1]
+```
+
 ```python
 def atr_last(candles, period=14):
     """ATR of the last point. None if candles are insufficient."""
@@ -302,9 +381,13 @@ def atr_last(candles, period=14):
     return sum(trs) / period
 ```
 
-Common usage: stop = `close - 2 * ATR`.
+Common usage: stop = `close - 2 * ATR`. (For a per-bar strategy, the
+streaming `ti.Atr(14)` with `.update(high, low, close)` is the `O(1)`
+parity-true equivalent.)
 
 ## Next steps
 
+* [Anatomy of a custom indicator](anatomy.md) -- the canonical file shape: colors and params first, then math, then the dispatcher.
+* [`tesstrade_indicators`](tesstrade-indicators.md) -- the unified math brain: the 6 vectorised functions (`rsi`/`macd`/`atr` among them) and their bit-for-bit streaming classes.
 * [Implementing SMA/EMA](implementing-sma-ema.md) -- the foundation for the indicators above.
 * [SMA Crossover](../strategies/sma-crossover.md), [RSI Mean Reversion](../strategies/rsi-mean-reversion.md), [MACD Momentum](../strategies/macd-momentum.md) -- templates using the indicators on this page.

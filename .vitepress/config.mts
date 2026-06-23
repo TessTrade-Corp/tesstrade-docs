@@ -59,6 +59,7 @@ export default withMermaid(
         {
           text: 'Indicators',
           items: [
+            { text: 'Anatomy of a custom indicator', link: '/indicators/anatomy' },
             { text: 'Plots and series', link: '/indicators/plots-and-series' },
             { text: 'Implementing SMA and EMA', link: '/indicators/implementing-sma-ema' },
             { text: 'RSI, MACD and Bollinger Bands', link: '/indicators/rsi-macd-bands' },

@@ -11,7 +11,12 @@ Classic strategy based on two simple moving averages, one fast and one slow. Whe
 
 Serves as a starting point for understanding the dispatcher, the `DECLARATION`, and the order flow. The implementation fits in fewer than 100 lines.
 
+The plotted moving averages use `ti.sma` from [`tesstrade_indicators`](../indicators/tesstrade-indicators.md) — the **same kernel the chart's built-in SMA renders with** — so the lines drawn here match the built-in indicator exactly (and run in O(n) instead of a per-bar slice sum).
+
 ```python
+import tesstrade_indicators as ti
+
+# (1) Identity + (2) Parameters + (3) Style/colors — all at the top, in the DECLARATION
 DECLARATION = {
     "type": "strategy",
     "inputs": [
@@ -60,14 +65,16 @@ DECLARATION = {
 def _build_chart(df, params):
     # In the df= branch, spread DECLARATION so pane/scale/plots travel with the series.
     # See: contract/dispatcher-main.md
-    closes = list(df["close"])
     fast = int((params or {}).get("fast_period", 9))
     slow = int((params or {}).get("slow_period", 21))
+    # (4) Math — ti.sma is the chart's own kernel, so these match the built-in SMA exactly.
+    closes = df["close"].tolist()
+    # (5) Output — ti.sma already returns one value per candle, None during warmup.
     return {
         **DECLARATION,
         "series": {
-            "ma_fast": Indicator.sma(closes, fast),
-            "ma_slow": Indicator.sma(closes, slow),
+            "ma_fast": ti.sma(closes, fast),
+            "ma_slow": ti.sma(closes, slow),
         },
     }
 

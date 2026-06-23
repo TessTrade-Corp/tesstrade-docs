@@ -68,10 +68,12 @@ The same function is called in three different contexts. See [The `main()` dispa
 
 | Page | Description |
 |---|---|
+| [Anatomy of a custom indicator](indicators/anatomy.md) | The canonical file structure — parameters and colors first, then math |
 | [Plots and `series`](indicators/plots-and-series.md) | How chart plots are declared and rendered |
 | [Implementing SMA and EMA](indicators/implementing-sma-ema.md) | Moving average recipes in pure Python |
 | [RSI, MACD and Bollinger Bands](indicators/rsi-macd-bands.md) | Pure-Python implementations of the three most common oscillators |
 | [Panes: overlay vs new pane](indicators/panes.md) | When to overlay on price versus use a separate pane |
+| [`tesstrade_indicators` (native library)](indicators/tesstrade-indicators.md) | The shared kernels the chart renders with — same math, callable from your script |
 
 ### Ready-to-use strategies
 
@@ -131,6 +133,7 @@ Full API in [SDK reference](sdk-reference/candles.md).
 Scripts run in a hardened Python sandbox. Available resources:
 
 * **Injected modules (no `import` required):** `np` (numpy), `pd` (pandas), `math`, `json`, `datetime`, plus safe optimized versions of `ta`, `pandas_ta`, and `talib`.
+* **Opt-in native library:** `import tesstrade_indicators as ti` exposes the **same kernels the live chart renders with** (so your math matches the chart exactly) — see [`tesstrade_indicators`](indicators/tesstrade-indicators.md).
 * **Allowed builtins:** `len`, `range`, `sum`, `abs`, `min`, `max`, `round`, `sorted`, `zip`, `enumerate`, `isinstance`, `int`, `float`, `str`, `list`, `dict`, `tuple`, `set`, `print`.
 * **Exception classes:** `ValueError`, `TypeError`, `KeyError`, `IndexError`, `RuntimeError`, `ZeroDivisionError`, `OverflowError`.
 

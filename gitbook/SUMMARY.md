@@ -24,6 +24,7 @@
 
 ## Indicators
 
+* [Anatomy of a custom indicator](indicators/anatomy.md)
 * [Plots and `series`](indicators/plots-and-series.md)
 * [Implementing SMA and EMA](indicators/implementing-sma-ema.md)
 * [RSI, MACD and Bollinger Bands](indicators/rsi-macd-bands.md)
