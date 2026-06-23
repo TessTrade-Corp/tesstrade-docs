@@ -11,6 +11,10 @@ export default withMermaid(
     ],
     srcDir: 'gitbook',
     cleanUrls: true,
+    // The single-file docs bundle lives in public/ and is served verbatim for
+    // download — it must not be compiled as a page (it concatenates every page,
+    // including ```vue fences that would otherwise break the SFC compiler).
+    srcExclude: ['public/tesstrade-docs-completo.md'],
     sitemap: {
       hostname: 'https://learn.tesstrade.com',
       transformItems(items) {

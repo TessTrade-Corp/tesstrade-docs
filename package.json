@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "npm run docs:build",
-    "docs:build": "vitepress build && npx pagefind --site .vitepress/dist",
-    "dev": "vitepress dev --host 0.0.0.0",
+    "docs:bundle": "node scripts/gen-completo.mjs",
+    "docs:build": "npm run docs:bundle && vitepress build && npx pagefind --site .vitepress/dist",
+    "dev": "npm run docs:bundle && vitepress dev --host 0.0.0.0",
     "preview": "vitepress preview --host 0.0.0.0"
   },
   "devDependencies": {
